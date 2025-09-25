@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Profile — ProbSo</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header class="app-header">
+    <a href="index.html" class="icon-btn">←</a>
+    <div class="logo">Profile</div>
+  </header>
+
+  <main class="container">
+    <section class="card">
+      <div class="profile-left">
+        <img id="profile-img-full" class="avatar-large" src="assets/avatar-placeholder.png" alt="Profile">
+      </div>
+      <div class="profile-center">
+        <div id="profile-name-full" class="name">Sagun Hansdah</div>
+        <div id="profile-meta" class="small">Age: —  •  Gender: —</div>
+        <p id="profile-bio">Bio goes here...</p>
+
+        <div class="small">Social links</div>
+        <ul id="profile-links" class="links">
+          <li><a href="#" target="_blank">Instagram</a></li>
+          <li><a href="#" target="_blank">Facebook</a></li>
+        </ul>
+        <button id="edit-profile" class="btn primary">Edit Profile</button>
+      </div>
+    </section>
+  </main>
+
+  <script src="firebase-config.js"></script>
+  <script src="auth.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      // Hook: load user profile via auth.getCurrentUserProfile() etc.
+    });
+  </script>
+</body>
+</html>

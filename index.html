@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>ProbSo — Home</title>
+  <link rel="stylesheet" href="style.css" />
+  <!-- Leaflet for map (Add location) -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+</head>
+<body>
+  <header class="app-header">
+    <button id="menu-toggle" class="icon-btn">☰</button>
+    <div class="logo">ProbSo</div>
+    <div class="header-right">
+      <a id="logout-btn" href="#" class="icon-btn" title="Logout">⎋</a>
+    </div>
+  </header>
+
+  <main class="container">
+    <!-- Card 1: Profile summary -->
+    <section class="card profile-card">
+      <div class="profile-left">
+        <img id="profile-img" src="assets/avatar-placeholder.png" alt="Profile" class="avatar">
+      </div>
+      <div class="profile-center">
+        <div id="profile-name" class="name">Sagun Hansdah</div>
+        <div id="profile-points" class="small">Points: <span>0</span></div>
+      </div>
+      <div class="profile-right">
+        <button id="open-profile" class="btn">Profile</button>
+      </div>
+    </section>
+
+    <!-- Card 2: Quick navigation -->
+    <section class="card quick-nav">
+      <div class="nav-row">
+        <button id="btn-profile" class="btn">Profile</button>
+        <button id="btn-notifications" class="btn">Notifications <span id="notif-count" class="badge hidden">0</span></button>
+      </div>
+      <div class="nav-row">
+        <button id="btn-messages" class="btn">Messages <span id="msg-count" class="badge hidden">0</span></button>
+        <button id="btn-groups" class="btn">Groups</button>
+      </div>
+      <div class="nav-row">
+        <button id="btn-category" class="btn">Category</button>
+      </div>
+    </section>
+
+    <!-- Card 3: Post Your Problem -->
+    <section class="card post-card">
+      <h3>Post Your Problem / Request</h3>
+      <textarea id="post-text" class="auto-resize" placeholder="Describe your problem..." rows="3"></textarea>
+
+      <div class="form-row">
+        <label class="file-label">
+          <input id="post-file" type="file" accept="image/*,video/*,application/pdf" />
+          Choose File
+        </label>
+
+        <select id="post-category" class="select">
+          <option value="">Select category</option>
+          <option>Emergency</option>
+          <option>Find Partner</option>
+          <option>Buy / Sell</option>
+          <option>Education</option>
+          <option>Find Job</option>
+          <option>Business</option>
+          <option>Others</option>
+        </select>
+
+        <button id="add-location-btn" class="btn">Add Location</button>
+      </div>
+
+      <div class="form-row">
+        <button id="post-btn" class="btn primary">Post</button>
+      </div>
+    </section>
+
+    <!-- Card 4: Feed -->
+    <section class="card feed-card">
+      <h3>Feed</h3>
+
+      <div class="search-row">
+        <input id="search-input" placeholder="Search..." />
+        <button id="search-btn" class="btn">Search</button>
+      </div>
+
+      <div class="search-filters hidden" id="search-filters">
+        <button class="filter-btn" data-filter="all">All</button>
+        <button class="filter-btn" data-filter="posts">Posts</button>
+        <button class="filter-btn" data-filter="people">People</button>
+        <button class="filter-btn" data-filter="location">Location</button>
+        <button class="filter-btn" data-filter="group">Group</button>
+      </div>
+
+      <div class="feed-controls">
+        <div class="left-controls">
+          <button id="filter-btn" class="btn">Filter</button>
+        </div>
+        <div class="right-controls">
+          <button id="refresh-feed" class="btn">Refresh Feed</button>
+        </div>
+      </div>
+
+      <div id="feed-list" class="feed-list" data-next-page-token="">
+        <!-- posts appended here -->
+      </div>
+
+      <div id="feed-loader" class="center small hidden">Loading...</div>
+    </section>
+  </main>
+
+  <!-- Modals and templates will be loaded via JS -->
+  <div id="modals-root"></div>
+
+  <!-- scripts -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="firebase-config.js"></script>
+  <script src="auth.js"></script>
+  <script src="location.js"></script>
+  <script src="script.js"></script>
+</body>
+</html>

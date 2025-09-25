@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Groups — ProbSo</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header class="app-header">
+    <a href="index.html" class="icon-btn">←</a>
+    <div class="logo">Groups</div>
+  </header>
+
+  <main class="container">
+    <section class="card">
+      <h2>Film Makers</h2>
+      <p class="small">Group description goes here.</p>
+      <div class="group-actions">
+        <button id="join-group" class="btn">Join</button>
+        <button id="view-members" class="btn">Members</button>
+      </div>
+
+      <div class="card mt">
+        <textarea id="group-post" class="auto-resize" placeholder="Post in group (only members can post)"></textarea>
+        <button id="submit-group-post" class="btn primary">Post</button>
+      </div>
+    </section>
+  </main>
+
+  <script src="firebase-config.js"></script>
+  <script src="auth.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      // Group logic...
+    });
+  </script>
+</body>
+</html>
