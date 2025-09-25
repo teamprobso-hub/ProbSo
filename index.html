@@ -1,124 +1,199 @@
 <!doctype html>
-<html lang="en">
+<html lang="hi">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>ProbSo — Home</title>
-  <link rel="stylesheet" href="style.css" />
-  <!-- Leaflet for map (Add location) -->
+  <title>ProbSo - Single Page</title>
+
+  <!-- Leaflet for OpenStreetMap (location picker) -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <link rel="stylesheet" href="style.css" />
+
+  <!-- Firebase SDK placeholders (will be initialized in firebase-config.js) -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
 </head>
 <body>
-  <header class="app-header">
-    <button id="menu-toggle" class="icon-btn">☰</button>
+  <!-- HEADER -->
+  <header class="header">
+    <button id="menuBtn" class="icon-btn">☰</button>
     <div class="logo">ProbSo</div>
     <div class="header-right">
-      <a id="logout-btn" href="#" class="icon-btn" title="Logout">⎋</a>
+      <button id="notifBtn" class="icon-btn">🔔<span id="notifBadge" class="badge hidden">0</span></button>
+      <button id="msgBtn" class="icon-btn">✉️<span id="msgBadge" class="badge hidden">0</span></button>
     </div>
   </header>
 
+  <!-- MAIN -->
   <main class="container">
-    <!-- Card 1: Profile summary -->
-    <section class="card profile-card">
+    <!-- TOP CARD: Profile + login/logout -->
+    <section class="card top-card">
       <div class="profile-left">
-        <img id="profile-img" src="assets/avatar-placeholder.png" alt="Profile" class="avatar">
+        <img id="profileImage" class="avatar" src="https://via.placeholder.com/80" alt="Profile" />
       </div>
       <div class="profile-center">
-        <div id="profile-name" class="name">Sagun Hansdah</div>
-        <div id="profile-points" class="small">Points: <span>0</span></div>
+        <div id="profileName" class="name">Guest User</div>
+        <div id="profilePoints" class="small-text">Points: 0</div>
       </div>
       <div class="profile-right">
-        <button id="open-profile" class="btn">Profile</button>
+        <button id="loginLogoutBtn" class="primary-btn">Login / Sign Up</button>
       </div>
     </section>
 
-    <!-- Card 2: Quick navigation -->
-    <section class="card quick-nav">
-      <div class="nav-row">
-        <button id="btn-profile" class="btn">Profile</button>
-        <button id="btn-notifications" class="btn">Notifications <span id="notif-count" class="badge hidden">0</span></button>
+    <!-- SECOND CARD: Profile / Notifications / Messages / Groups / Category -->
+    <section class="card control-card">
+      <div class="control-row">
+        <button id="openProfileBtn" class="flat-btn">Profile</button>
       </div>
-      <div class="nav-row">
-        <button id="btn-messages" class="btn">Messages <span id="msg-count" class="badge hidden">0</span></button>
-        <button id="btn-groups" class="btn">Groups</button>
+      <div class="control-row">
+        <button id="notificationsBtn" class="flat-btn">Notifications</button>
+        <button id="messagesBtn" class="flat-btn">Messages</button>
       </div>
-      <div class="nav-row">
-        <button id="btn-category" class="btn">Category</button>
+      <div class="control-row">
+        <button id="groupsBtn" class="flat-btn">Groups</button>
+        <button id="categoryBtn" class="flat-btn">Category</button>
       </div>
     </section>
 
-    <!-- Card 3: Post Your Problem -->
+    <!-- THIRD CARD: Post composer -->
     <section class="card post-card">
-      <h3>Post Your Problem / Request</h3>
-      <textarea id="post-text" class="auto-resize" placeholder="Describe your problem..." rows="3"></textarea>
+      <div class="card-title">Post Your Problem / Request</div>
 
-      <div class="form-row">
-        <label class="file-label">
-          <input id="post-file" type="file" accept="image/*,video/*,application/pdf" />
+      <textarea id="postText" class="auto-resize textarea" placeholder="Yahan apna sawaal ya request likhen..."></textarea>
+
+      <div class="row">
+        <label class="file-btn">
+          <input id="fileInput" type="file" style="display:none" />
           Choose File
         </label>
 
-        <select id="post-category" class="select">
-          <option value="">Select category</option>
-          <option>Emergency</option>
-          <option>Find Partner</option>
-          <option>Buy / Sell</option>
-          <option>Education</option>
-          <option>Find Job</option>
-          <option>Business</option>
-          <option>Others</option>
+        <select id="categorySelect">
+          <option value="">Select Category</option>
+          <option>Emergency</option><option>Find Partner</option><option>Buy / Sell</option>
+          <option>Education</option><option>Find Job</option><option>Business</option><option>Other</option>
         </select>
 
-        <button id="add-location-btn" class="btn">Add Location</button>
+        <button id="locBtn" class="flat-btn">Add Location</button>
+        <button id="postBtn" class="primary-btn">Post</button>
       </div>
 
-      <div class="form-row">
-        <button id="post-btn" class="btn primary">Post</button>
-      </div>
+      <div id="selectedLocation" class="small-text muted"></div>
     </section>
 
-    <!-- Card 4: Feed -->
+    <!-- LOCATION PICKER MODAL -->
+    <div id="locModal" class="modal hidden">
+      <div class="modal-content">
+        <h3>Pick Location (OpenStreetMap)</h3>
+        <div id="map" style="height:300px"></div>
+        <div class="row">
+          <input id="locSearch" placeholder="Search place (Nominatim)" />
+          <button id="locConfirm" class="primary-btn">Confirm</button>
+          <button id="locCancel" class="flat-btn">Cancel</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- FOURTH CARD: Feed -->
     <section class="card feed-card">
-      <h3>Feed</h3>
+      <div class="card-title">Feed</div>
 
       <div class="search-row">
-        <input id="search-input" placeholder="Search..." />
-        <button id="search-btn" class="btn">Search</button>
+        <input id="feedSearch" placeholder="Search..." />
+        <button id="feedSearchBtn" class="flat-btn">Search</button>
       </div>
 
-      <div class="search-filters hidden" id="search-filters">
-        <button class="filter-btn" data-filter="all">All</button>
-        <button class="filter-btn" data-filter="posts">Posts</button>
-        <button class="filter-btn" data-filter="people">People</button>
-        <button class="filter-btn" data-filter="location">Location</button>
-        <button class="filter-btn" data-filter="group">Group</button>
+      <div class="search-filters hidden" id="searchFilters">
+        <button class="filter-btn">All</button>
+        <button class="filter-btn">Posts</button>
+        <button class="filter-btn">People</button>
+        <button class="filter-btn">Location</button>
+        <button class="filter-btn">Group</button>
       </div>
 
-      <div class="feed-controls">
-        <div class="left-controls">
-          <button id="filter-btn" class="btn">Filter</button>
-        </div>
-        <div class="right-controls">
-          <button id="refresh-feed" class="btn">Refresh Feed</button>
-        </div>
+      <div class="filter-row">
+        <button id="filterBtn" class="flat-btn">Filter</button>
+        <div style="flex:1"></div>
+        <button id="refreshFeedBtn" class="flat-btn">Refresh Feed</button>
       </div>
 
-      <div id="feed-list" class="feed-list" data-next-page-token="">
-        <!-- posts appended here -->
-      </div>
+      <div id="feedList" class="feed-list"></div>
 
-      <div id="feed-loader" class="center small hidden">Loading...</div>
+      <div id="loadingMore" class="muted small-text hidden">Loading more...</div>
     </section>
+
+    <!-- GROUP PREVIEW CARD -->
+    <section class="card group-card">
+      <div class="group-title">Film Makers</div>
+      <div class="group-desc">Film makers, editors, directors share tips & jobs.</div>
+      <div class="row group-actions">
+        <button id="joinGroupBtn" class="primary-btn">Join</button>
+        <button id="membersBtn" class="flat-btn">Members</button>
+      </div>
+      <textarea id="groupPostText" class="auto-resize textarea small" placeholder="Group post (joined users only)"></textarea>
+      <button id="groupPostBtn" class="primary-btn">Post in Group</button>
+    </section>
+
   </main>
 
-  <!-- Modals and templates will be loaded via JS -->
-  <div id="modals-root"></div>
+  <!-- LOGIN MODAL -->
+  <div id="loginModal" class="modal">
+    <div class="modal-content split">
+      <div>
+        <h3>Email / Password</h3>
+        <input id="emailInput" placeholder="Email" />
+        <input id="pwdInput" type="password" placeholder="Password" />
+        <div class="row">
+          <button id="emailLoginBtn" class="primary-btn">Login</button>
+          <button id="emailSignupBtn" class="flat-btn">Sign Up</button>
+        </div>
+        <div class="or">OR</div>
+        <button id="googleLoginBtn" class="primary-btn">Login with Google</button>
+      </div>
 
-  <!-- scripts -->
+      <div>
+        <h3>Mobile Number</h3>
+        <input id="mobileInput" placeholder="Phone number (+91...)" />
+        <div class="row">
+          <button id="smsLoginBtn" class="primary-btn">Send OTP</button>
+        </div>
+      </div>
+
+      <button id="closeLogin" class="close-modal">✖</button>
+    </div>
+  </div>
+
+  <!-- REPORT MODAL -->
+  <div id="reportModal" class="modal hidden">
+    <div class="modal-content">
+      <h3>Report Post</h3>
+      <textarea id="reportReason" placeholder="Reason for reporting..."></textarea>
+      <div class="row">
+        <button id="sendReportBtn" class="primary-btn">Send Report</button>
+        <button id="cancelReportBtn" class="flat-btn">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- COMMENTS MODAL (show all comments) -->
+  <div id="commentsModal" class="modal hidden">
+    <div class="modal-content">
+      <h3>Comments</h3>
+      <div id="commentsList"></div>
+      <textarea id="commentNew" class="auto-resize textarea" placeholder="Write a comment..."></textarea>
+      <div class="row">
+        <button id="submitCommentBtn" class="primary-btn">Comment</button>
+        <button id="closeCommentsBtn" class="flat-btn">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- TOAST -->
+  <div id="toast" class="toast hidden"></div>
+
+  <!-- Scripts -->
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  <script src="firebase-config.js"></script>
-  <script src="auth.js"></script>
-  <script src="location.js"></script>
+  <script src="firebase-config.js"></script> <!-- YOUR config: define firebaseConfig in this file -->
   <script src="script.js"></script>
 </body>
 </html>
