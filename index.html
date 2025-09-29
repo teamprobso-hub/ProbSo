@@ -17,6 +17,31 @@
     <button id="msgBtn" class="icon-btn">✉️<span id="msgBadge" class="badge hidden">0</span></button>
   </div>
 </header>
+<main id="mainContent">
+  <!-- Dynamic content (like profile.html) yahan load hoga -->
+</main>
+<script type="module">
+function loadPage(page){
+  fetch(page)
+    .then(res=>res.text())
+    .then(html=>{
+      document.getElementById('mainContent').innerHTML = html;
+      // Module scripts ko re-run karne ke liye
+      const scripts = document.getElementById('mainContent').querySelectorAll('script[type="module"]');
+      scripts.forEach(oldScript=>{
+        const newScript = document.createElement('script');
+        newScript.type = 'module';
+        newScript.textContent = oldScript.textContent;
+        document.body.appendChild(newScript);
+      });
+    });
+}
+
+// Example: profile button click
+document.getElementById('openProfileBtn').addEventListener('click', ()=>{
+  loadPage('profile.html'); // yahan aapka profile.html ka path
+});
+</script>
 
 <main class="container">
 
@@ -49,8 +74,13 @@
       <label class="file-btn"><input id="fileInput" type="file" style="display:none"/>Choose File</label>
       <select id="categorySelect">
         <option value="">Select Category</option>
-        <option>Emergency</option><option>Find Partner</option><option>Buy / Sell</option>
-        <option>Education</option><option>Find Job</option><option>Business</option><option>Other</option>
+        <option>Emergency</option>
+        <option>Find Partner</option>
+        <option>Buy / Sell</option>
+        <option>Education</option>
+        <option>Find Job</option>
+        <option>Business</option>
+        <option>Other</option>
       </select>
       <button id="locBtn" class="flat-btn">Add Location</button>
       <button id="postBtn" class="primary-btn">Post</button>
