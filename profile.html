@@ -7,8 +7,8 @@
     body { font-family: Arial, sans-serif; margin:0; background:#f4f6f9; }
     .profile-container { max-width:600px; margin:10px auto; padding:20px; }
     .card { background:white; border-radius:12px; padding:20px; box-shadow:0 2px 8px rgba(0,0,0,0.1); margin-bottom:20px; }
-    .profile-header { display:flex; align-items:center; }
-    .profile-pic { width:100px; height:100px; border-radius:50%; border:3px solid #2196f3; display:flex; align-items:center; justify-content:center; font-size:12px; color:gray; margin-right:20px; }
+    .profile-header { display:flex; align-items:center; gap:20px; }
+    .profile-pic { width:100px; height:100px; border-radius:50%; border:3px solid #2196f3; object-fit:cover; }
     .stats { display:grid; grid-template-columns:repeat(2, 1fr); gap:10px; text-align:center; margin-top:10px; }
     .stats div { font-weight:bold; }
     h3 { color:#2196f3; margin-bottom:10px; }
@@ -17,7 +17,6 @@
     .btn { padding:10px 20px; border:none; border-radius:8px; cursor:pointer; margin:5px; }
     .btn-primary { background:#2196f3; color:white; }
     .btn-secondary { background:#f0f0f0; }
-    /* Edit form */
     #editForm { display:none; margin-top:20px; }
     #editForm input, #editForm textarea { width:100%; padding:8px; margin:6px 0; border:1px solid #ccc; border-radius:6px; }
   </style>
@@ -27,7 +26,7 @@
     <!-- Profile Card -->
     <div class="card">
       <div class="profile-header">
-        <div class="profile-pic" id="profilePic">Profile</div>
+        <img id="profilePic" class="profile-pic" src="" alt="Profile Picture">
         <div>
           <h2 id="profileName">User Name</h2>
           <small id="points">0 Points</small>
@@ -63,6 +62,7 @@
     <!-- Edit Form -->
     <div class="card" id="editForm">
       <h3>Edit Profile</h3>
+      <input type="file" id="editPic" accept="image/*">
       <input type="text" id="editName" placeholder="Name">
       <input type="number" id="editAge" placeholder="Age">
       <input type="text" id="editGender" placeholder="Gender">
@@ -79,7 +79,8 @@
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-app.js";
     import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-auth.js";
-    import { getFirestore, doc, getDoc, updateDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-firestore.js";
+    import { getFirestore, doc, getDoc, setDoc, updateDoc, increment, deleteDoc } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-firestore.js";
+    import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-storage.js";
 const firebaseConfig = {
     apiKey: "AIzaSyAJUpbCOWRl_YU14eAjARPacD9CuiBSPfg",
     authDomain: "probso.firebaseapp.com",
@@ -93,11 +94,15 @@ const firebaseConfig = {
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
     const db = getFirestore(app);
+    const storage = getStorage(app);
 
     let currentUserId = null;
+    let profileUserId = null; // jis profile ko dekh rahe hain
+    let newProfilePicFile = null;
 
-    // 🔹 Load Profile
+    // Profile Load
     async function loadProfile(userId, isOwnProfile=false){
+      profileUserId = userId;
       const ref = doc(db, "profiles", userId);
       const snap = await getDoc(ref);
       if(snap.exists()){
@@ -110,18 +115,12 @@ const firebaseConfig = {
         document.getElementById("address").textContent = data.address || "";
         document.getElementById("bio").textContent = data.bio || "";
         document.getElementById("links").innerHTML = (data.links || []).map(l=>`<a href="${l}" target="_blank">${l}</a>`).join(" | ");
-
-        // Pre-fill edit form
-        document.getElementById("editName").value = data.name || "";
-        document.getElementById("editAge").value = data.age || "";
-        document.getElementById("editGender").value = data.gender || "";
-        document.getElementById("editIdentity").value = data.identity || "";
-        document.getElementById("editAddress").value = data.address || "";
-        document.getElementById("editBio").value = data.bio || "";
-        document.getElementById("editLinks").value = (data.links || []).join(", ");
+        document.getElementById("profilePic").src = data.photoURL || "https://via.placeholder.com/100";
+        document.getElementById("followers").textContent = data.followersCount || 0;
+        document.getElementById("following").textContent = data.followingCount || 0;
       }
 
-      // Buttons
+      // Action buttons
       const actionDiv = document.getElementById("actionButtons");
       actionDiv.innerHTML = "";
       if(isOwnProfile){
@@ -133,19 +132,29 @@ const firebaseConfig = {
       } else {
         const followBtn = document.createElement("button");
         followBtn.className = "btn btn-primary";
-        followBtn.textContent = "Follow";
-        followBtn.onclick = ()=> alert("Follow feature connect karna hai");
-        const msgBtn = document.createElement("button");
-        msgBtn.className = "btn btn-secondary";
-        msgBtn.textContent = "Message";
-        msgBtn.onclick = ()=> alert("Message feature connect karna hai");
         actionDiv.appendChild(followBtn);
-        actionDiv.appendChild(msgBtn);
+
+        // Check already following?
+        const followDoc = await getDoc(doc(db, "followers", profileUserId, "userFollowers", currentUserId));
+        if(followDoc.exists()){
+          followBtn.textContent = "Unfollow";
+          followBtn.onclick = ()=> unfollowUser();
+        } else {
+          followBtn.textContent = "Follow";
+          followBtn.onclick = ()=> followUser();
+        }
       }
     }
 
-    // 🔹 Save Profile
+    // Save Profile (Edit)
     async function saveProfile(){
+      let photoURL = null;
+      if(newProfilePicFile){
+        const storageRef = ref(storage, "profilePics/" + currentUserId);
+        await uploadBytes(storageRef, newProfilePicFile);
+        photoURL = await getDownloadURL(storageRef);
+      }
+
       const ref = doc(db, "profiles", currentUserId);
       await setDoc(ref, {
         name: document.getElementById("editName").value,
@@ -154,19 +163,45 @@ const firebaseConfig = {
         identity: document.getElementById("editIdentity").value,
         address: document.getElementById("editAddress").value,
         bio: document.getElementById("editBio").value,
-        links: document.getElementById("editLinks").value.split(",").map(l=>l.trim())
+        links: document.getElementById("editLinks").value.split(",").map(l=>l.trim()),
+        ...(photoURL && { photoURL })
       }, { merge:true });
 
       alert("Profile updated!");
       document.getElementById("editForm").style.display = "none";
       loadProfile(currentUserId, true);
+      newProfilePicFile = null;
     }
 
-    // 🔹 Auth
+    // Follow User
+    async function followUser(){
+      await setDoc(doc(db, "followers", profileUserId, "userFollowers", currentUserId), { followedAt: Date.now() });
+      await setDoc(doc(db, "following", currentUserId, "userFollowing", profileUserId), { followedAt: Date.now() });
+
+      await updateDoc(doc(db, "profiles", profileUserId), { followersCount: increment(1) });
+      await updateDoc(doc(db, "profiles", currentUserId), { followingCount: increment(1) });
+
+      loadProfile(profileUserId, false);
+    }
+
+    // Unfollow User
+    async function unfollowUser(){
+      await deleteDoc(doc(db, "followers", profileUserId, "userFollowers", currentUserId));
+      await deleteDoc(doc(db, "following", currentUserId, "userFollowing", profileUserId));
+
+      await updateDoc(doc(db, "profiles", profileUserId), { followersCount: increment(-1) });
+      await updateDoc(doc(db, "profiles", currentUserId), { followingCount: increment(-1) });
+
+      loadProfile(profileUserId, false);
+    }
+
+    // Auth
     onAuthStateChanged(auth, async (user)=>{
       if(user){
         currentUserId = user.uid;
+        // Apna profile load kare
         await loadProfile(user.uid, true);
+        // Note: agar dusre user ka profile dikhana ho, yahan userId change kar sakte ho
       } else {
         alert("Please login first");
       }
@@ -175,6 +210,9 @@ const firebaseConfig = {
     // Events
     document.getElementById("saveProfile").onclick = saveProfile;
     document.getElementById("cancelEdit").onclick = ()=> document.getElementById("editForm").style.display = "none";
+    document.getElementById("editPic").addEventListener("change", e=>{
+      newProfilePicFile = e.target.files[0];
+    });
   </script>
 </body>
 </html>
