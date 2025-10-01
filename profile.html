@@ -18,7 +18,9 @@
     .btn-primary { background:#2196f3; color:white; }
     .btn-secondary { background:#f0f0f0; }
     #editForm { display:none; margin-top:20px; }
-    #editForm input, #editForm textarea { width:100%; padding:8px; margin:6px 0; border:1px solid #ccc; border-radius:6px; }
+    #editForm input, #editForm textarea, #editForm select { 
+      width:100%; padding:8px; margin:6px 0; border:1px solid #ccc; border-radius:6px; 
+    }
   </style>
 </head>
 <body>
@@ -65,13 +67,21 @@
       <input type="file" id="editPic" accept="image/*">
       <input type="text" id="editName" placeholder="Name">
       <input type="number" id="editAge" placeholder="Age">
-      <input type="text" id="editGender" placeholder="Gender">
+
+      <!-- Gender select box -->
+      <select id="editGender">
+        <option value="">Select Gender</option>
+        <option value="Male">Male</option>
+        <option value="Female">Female</option>
+        <option value="Other">Other</option>
+      </select>
+
       <input type="text" id="editIdentity" placeholder="Identity (e.g. YouTuber)">
       <input type="text" id="editAddress" placeholder="Address">
       <textarea id="editBio" placeholder="Bio"></textarea>
       <input type="text" id="editLinks" placeholder="Links (comma separated)">
-      <button class="btn btn-primary" id="saveProfile">Save</button>
-      <button class="btn btn-secondary" id="cancelEdit">Cancel</button>
+      <button class="btn btn-primary" id="saveProfile" type="button">Save</button>
+      <button class="btn btn-secondary" id="cancelEdit" type="button">Cancel</button>
     </div>
   </div>
 
@@ -81,23 +91,23 @@
     import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-auth.js";
     import { getFirestore, doc, getDoc, setDoc, updateDoc, increment, deleteDoc } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-firestore.js";
     import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-storage.js";
-const firebaseConfig = {
-    apiKey: "AIzaSyAJUpbCOWRl_YU14eAjARPacD9CuiBSPfg",
-    authDomain: "probso.firebaseapp.com",
-    projectId: "probso",
-    storageBucket: "probso.firebasestorage.app",
-    messagingSenderId: "892196080965",
-    appId: "1:892196080965:web:9459195d61c71ed22a022c"
-  };
-    
 
+    const firebaseConfig = {
+      apiKey: "AIzaSyAJUpbCOWRl_YU14eAjARPacD9CuiBSPfg",
+      authDomain: "probso.firebaseapp.com",
+      projectId: "probso",
+      storageBucket: "probso.firebasestorage.app",
+      messagingSenderId: "892196080965",
+      appId: "1:892196080965:web:9459195d61c71ed22a022c"
+    };
+    
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
     const db = getFirestore(app);
     const storage = getStorage(app);
 
     let currentUserId = null;
-    let profileUserId = null; // jis profile ko dekh rahe hain
+    let profileUserId = null; 
     let newProfilePicFile = null;
 
     // Profile Load
@@ -134,7 +144,6 @@ const firebaseConfig = {
         followBtn.className = "btn btn-primary";
         actionDiv.appendChild(followBtn);
 
-        // Check already following?
         const followDoc = await getDoc(doc(db, "followers", profileUserId, "userFollowers", currentUserId));
         if(followDoc.exists()){
           followBtn.textContent = "Unfollow";
@@ -146,7 +155,7 @@ const firebaseConfig = {
       }
     }
 
-    // Save Profile (Edit)
+    // Save Profile
     async function saveProfile(){
       let photoURL = null;
       if(newProfilePicFile){
@@ -173,7 +182,7 @@ const firebaseConfig = {
       newProfilePicFile = null;
     }
 
-    // Follow User
+    // Follow / Unfollow
     async function followUser(){
       await setDoc(doc(db, "followers", profileUserId, "userFollowers", currentUserId), { followedAt: Date.now() });
       await setDoc(doc(db, "following", currentUserId, "userFollowing", profileUserId), { followedAt: Date.now() });
@@ -184,7 +193,6 @@ const firebaseConfig = {
       loadProfile(profileUserId, false);
     }
 
-    // Unfollow User
     async function unfollowUser(){
       await deleteDoc(doc(db, "followers", profileUserId, "userFollowers", currentUserId));
       await deleteDoc(doc(db, "following", currentUserId, "userFollowing", profileUserId));
@@ -199,17 +207,15 @@ const firebaseConfig = {
     onAuthStateChanged(auth, async (user)=>{
       if(user){
         currentUserId = user.uid;
-        // Apna profile load kare
         await loadProfile(user.uid, true);
-        // Note: agar dusre user ka profile dikhana ho, yahan userId change kar sakte ho
       } else {
         alert("Please login first");
       }
     });
 
     // Events
-    document.getElementById("saveProfile").onclick = saveProfile;
-    document.getElementById("cancelEdit").onclick = ()=> document.getElementById("editForm").style.display = "none";
+    document.getElementById("saveProfile").addEventListener("click", saveProfile);
+    document.getElementById("cancelEdit").addEventListener("click", ()=> document.getElementById("editForm").style.display = "none");
     document.getElementById("editPic").addEventListener("change", e=>{
       newProfilePicFile = e.target.files[0];
     });
