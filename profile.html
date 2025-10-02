@@ -22,8 +22,12 @@
       width:100%; padding:8px; margin:6px 0; border:1px solid #ccc; border-radius:6px; 
     }
   </style>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
+  <div class="back-bar">
+  <button id="backBtn">⬅ Back</button>
+</div>
   <div class="profile-container">
     <!-- Profile Card -->
     <div class="card">
@@ -220,5 +224,6 @@
       newProfilePicFile = e.target.files[0];
     });
   </script>
+  <script type="module" src="app.js"></script>
 </body>
 </html>

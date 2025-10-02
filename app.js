@@ -135,14 +135,34 @@ onAuthStateChanged(auth, (user) => {
   }
 });
 
+// Page history stack
+let pageHistory = [];
+
+// Single loadPage function
 function loadPage(page) {
   fetch(page)
     .then(res => res.text())
-    .then(html => {
-      document.getElementById('mainContent').innerHTML = html;
+    .then(data => {
+      document.querySelector("main").innerHTML = data;
+      pageHistory.push(page); // history me save karo
     })
     .catch(err => console.error("Page load error:", err));
 }
+
+// Back button handle
+document.addEventListener("click", (e) => {
+  if (e.target && e.target.id === "backBtn") {
+    pageHistory.pop(); // current page remove
+    let lastPage = pageHistory.pop(); // previous page
+
+    if (lastPage) {
+      loadPage(lastPage);
+    } else {
+      // Pure app ko reload karke index.html par wapas jao
+      window.location.href = "index.html";
+    }
+  }
+});
 
 // Post submission
 postBtn.addEventListener('click', async ()=>{
