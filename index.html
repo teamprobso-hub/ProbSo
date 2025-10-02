@@ -13,7 +13,7 @@
   <button id="menuBtn" class="icon-btn">☰</button>
   <div class="logo">ProbSo</div>
   <div class="header-right">
-<button id="notificationBtn" class="bell" style="position:relative;">
+<button id="notif-icon" class="bell" style="position:relative;">
   🔔
   <span id="notifCount" class="notif-badge">0</span>
 </button>
@@ -50,12 +50,6 @@ document.getElementById('openProfileBtn').addEventListener('click', ()=>{
 });
 </script>
 
-<script type= "module">
-document.getElementById('notificationBtn').addEventListener('click', ()=>{
-  loadPage('notification.html');
-});
-</script>
-
 <main class="container">
 
   <!-- Top Card: Profile -->
@@ -75,7 +69,7 @@ document.getElementById('notificationBtn').addEventListener('click', ()=>{
   <!-- Controls -->
   <section class="card control-card">
     <div class="control-row"><button id="openProfileBtn" class="flat-btn">Profile</button></div>
-    <div class="control-row"><button id="notificationsBtn" class="flat-btn">Notifications</button><button id="messagesBtn" class="flat-btn">Messages</button></div>
+    <div class="control-row"><button id="notificationBtn" class="flat-btn">Notifications</button><button id="messagesBtn" class="flat-btn">Messages</button></div>
     <div class="control-row"><button id="groupsBtn" class="flat-btn">Groups</button><button id="categoryBtn" class="flat-btn">Category</button></div>
   </section>
 

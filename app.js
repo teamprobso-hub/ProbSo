@@ -16,6 +16,12 @@ const auth = getAuth(app);
 const db = getFirestore(app);
 
 // Toggle panel open/close
+const notifBtn = document.getElementById("notif-icon");
+const notifPanel = document.getElementById("notificationPanel");
+notifBtn.addEventListener("click", () => {
+  notifPanel.classList.toggle("hidden");
+});
+
 const notifBtn = document.getElementById("notificationBtn");
 const notifPanel = document.getElementById("notificationPanel");
 notifBtn.addEventListener("click", () => {
@@ -57,6 +63,15 @@ onAuthStateChanged(auth, (user) => {
     });
   }
 });
+
+function loadPage(page) {
+  fetch(page)
+    .then(res => res.text())
+    .then(html => {
+      document.getElementById('mainContent').innerHTML = html;
+    })
+    .catch(err => console.error("Page load error:", err));
+}
 
 // UI Elements
 const loginModal = document.getElementById('loginModal');
