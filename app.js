@@ -15,6 +15,49 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 
+// Toggle panel open/close
+const notifBtn = document.getElementById("notificationBtn");
+const notifPanel = document.getElementById("notificationPanel");
+notifBtn.addEventListener("click", () => {
+  notifPanel.classList.toggle("hidden");
+});
+
+// Check login & show welcome notification (first time only)
+onAuthStateChanged(auth, (user) => {
+  if (user) {
+    const userDocRef = doc(db, "users", user.uid);
+
+    getDoc(userDocRef).then((docSnap) => {
+      if (docSnap.exists()) {
+        const userData = docSnap.data();
+
+        // Agar pehli baar login hai (welcomeShown flag nahi hai)
+        if (!userData.welcomeShown) {
+          // Notification count update
+          document.getElementById("notifCount").innerText = "1";
+
+          // Welcome notification banake list me daalo
+          const li = document.createElement("li");
+          li.className = "unread";
+          li.innerHTML = `
+            <div><strong>Welcome!</strong> Thanks for joining us 🎉</div>
+            <button id="guideBtn">User Guide</button>
+          `;
+          document.getElementById("notificationList").prepend(li);
+
+          // User Guide button action
+          li.querySelector("#guideBtn").addEventListener("click", () => {
+            loadPage("user-guide.html"); // alag page open hoga
+          });
+
+          // Flag update -> next login par dobara na aaye
+          updateDoc(userDocRef, { welcomeShown: true });
+        }
+      }
+    });
+  }
+});
+
 // UI Elements
 const loginModal = document.getElementById('loginModal');
 const loginLogoutBtn = document.getElementById('loginLogoutBtn');

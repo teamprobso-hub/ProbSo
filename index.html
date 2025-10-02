@@ -13,10 +13,17 @@
   <button id="menuBtn" class="icon-btn">☰</button>
   <div class="logo">ProbSo</div>
   <div class="header-right">
-    <button id="notifBtn" class="icon-btn">🔔<span id="notifBadge" class="badge hidden">0</span></button>
+<button id="notificationBtn" class="bell" style="position:relative;">
+  🔔
+  <span id="notifCount" class="notif-badge">0</span>
+</button>
     <button id="msgBtn" class="icon-btn">✉️<span id="msgBadge" class="badge hidden">0</span></button>
   </div>
 </header>
+<!-- Notification Panel -->
+<div id="notificationPanel" class="notif-panel hidden">
+  <ul id="notificationList"></ul>
+</div>
 <main id="mainContent">
   <!-- Dynamic content (like profile.html) yahan load hoga -->
 </main>
@@ -40,6 +47,12 @@ function loadPage(page){
 // Example: profile button click
 document.getElementById('openProfileBtn').addEventListener('click', ()=>{
   loadPage('profile.html'); // yahan aapka profile.html ka path
+});
+</script>
+
+<script type= "module">
+document.getElementById('notificationBtn').addEventListener('click', ()=>{
+  loadPage('notification.html');
 });
 </script>
 

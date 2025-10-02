@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Notifications</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin:0; background:#f4f6f9; }
+    .container { max-width:600px; margin:80px auto 20px auto; padding:20px; }
+    h2 { color:#2196f3; margin-bottom:15px; }
+    .notification { 
+      background:white; 
+      padding:15px; 
+      border-radius:8px; 
+      margin-bottom:10px; 
+      box-shadow:0 1px 5px rgba(0,0,0,0.1);
+      cursor:pointer;
+      transition: background 0.2s;
+    }
+    .notification.unread { background:#e9f3ff; }  /* Unread Blue Tint */
+    .notification.read { background:white; }      /* Read White */
+    .notification p { margin:0; color:#333; }
+    .notification small { color:#777; }
+    .topbar { 
+      position:fixed; top:0; left:0; right:0; 
+      height:60px; background:#2196f3; color:white; 
+      display:flex; align-items:center; justify-content:space-between; 
+      padding:0 20px; font-weight:bold; 
+      box-shadow:0 2px 6px rgba(0,0,0,0.2);
+    }
+    .bell { position:relative; cursor:pointer; }
+    .bell span { 
+      position:absolute; top:-5px; right:-8px; 
+      background:red; color:white; 
+      font-size:12px; padding:2px 6px; 
+      border-radius:50%;
+    }
+  </style>
+</head>
+<body>
+  <!-- Top Header -->
+  <div class="topbar">
+    <div>🔔 Notifications</div>
+    <div class="bell" id="notifBell">🔔<span id="notifCount">0</span></div>
+  </div>
+
+  <div class="container" id="notifList">
+    <h2>Your Notifications</h2>
+    <!-- Notifications dynamically load here -->
+  </div>
+
+  <!-- Firebase -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-app.js";
+    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-auth.js";
+    import { getFirestore, collection, query, orderBy, onSnapshot, doc, updateDoc } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyAJUpbCOWRl_YU14eAjARPacD9CuiBSPfg",
+      authDomain: "probso.firebaseapp.com",
+      projectId: "probso",
+      storageBucket: "probso.firebasestorage.app",
+      messagingSenderId: "892196080965",
+      appId: "1:892196080965:web:9459195d61c71ed22a022c"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+
+    const notifList = document.getElementById("notifList");
+    const notifCount = document.getElementById("notifCount");
+
+    onAuthStateChanged(auth, (user)=>{
+      if(user){
+        loadNotifications(user.uid);
+      } else {
+        notifList.innerHTML = "<p>Please login to see notifications.</p>";
+      }
+    });
+
+    function loadNotifications(userId){
+      const q = query(collection(db, "notifications", userId, "userNotifications"), orderBy("createdAt","desc"));
+      onSnapshot(q, (snapshot)=>{
+        notifList.innerHTML = "<h2>Your Notifications</h2>";
+        let unread = 0;
+        snapshot.forEach(docSnap=>{
+          const data = docSnap.data();
+          const div = document.createElement("div");
+          div.className = "notification " + (data.read ? "read":"unread");
+          div.innerHTML = `
+            <p>${data.message}</p>
+            <small>${data.createdAt?.toDate().toLocaleString() || ""}</small>
+          `;
+          div.onclick = ()=> markAsRead(userId, docSnap.id);
+          notifList.appendChild(div);
+          if(!data.read) unread++;
+        });
+        notifCount.textContent = unread;
+        notifCount.style.display = unread>0 ? "block":"none";
+      });
+    }
+
+    async function markAsRead(userId, notifId){
+      const ref = doc(db, "notifications", userId, "userNotifications", notifId);
+      await updateDoc(ref, { read:true });
+    }
+  </script>
+</body>
+</html>
