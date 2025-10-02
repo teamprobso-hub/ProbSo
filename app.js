@@ -87,15 +87,15 @@ onAuthStateChanged(auth,async (user)=>{
 
 
 // Toggle panel open/close
-const notifBtn = document.getElementById("notif-icon");
+const notifIcon = document.getElementById("notif-icon");
 const notifPanel = document.getElementById("notificationPanel");
-notifBtn.addEventListener("click", () => {
+notifIcon.addEventListener("click", () => {
   notifPanel.classList.toggle("hidden");
 });
 
 const notifBtn = document.getElementById("notificationBtn");
-const notifPanel = document.getElementById("notificationPanel");
-notifBtn.addEventListener("click", () => {
+notifBtn.addEventListener("click", () =>
+{
   notifPanel.classList.toggle("hidden");
 });
 
@@ -117,7 +117,7 @@ onAuthStateChanged(auth, (user) => {
           const li = document.createElement("li");
           li.className = "unread";
           li.innerHTML = `
-            <div><strong>Welcome!</strong> Thanks for joining us 🎉</div>
+            <div><strong>Welcome!</strong>Thanks for joining us 🎉. Before using this app, see user's guide for better experience.</div>
             <button id="guideBtn">User Guide</button>
           `;
           document.getElementById("notificationList").prepend(li);
