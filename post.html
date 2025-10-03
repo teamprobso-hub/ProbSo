@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Post Feed</title>
+  <style>
+    body { font-family: Arial, sans-serif; background: #f4f4f9; margin:0; padding:20px;}
+    .post { background:#fff; border-radius:10px; padding:15px; margin-bottom:20px; box-shadow:0 2px 5px rgba(0,0,0,0.1);}
+    .post-header { display:flex; align-items:center; justify-content:space-between;}
+    .user-info { display:flex; align-items:center; cursor:pointer;}
+    .user-info img { width:40px; height:40px; border-radius:50%; margin-right:10px;}
+    .username { font-weight:bold;}
+    .menu { cursor:pointer; font-size:18px;}
+    .post-content { margin:15px 0; font-size:14px;}
+    .post-footer { display:flex; justify-content:space-between; align-items:center; margin-top:10px;}
+    .post-footer button { background:none; border:none; cursor:pointer; padding:5px 10px; font-size:14px;}
+    .post-footer button:hover { background:#eee; border-radius:5px;}
+    .comment-section { margin-top:10px; border-top:1px solid #ddd; padding-top:10px; display:none;}
+    .comment { margin-bottom:8px; font-size:13px; border-bottom:1px solid #f0f0f0; padding-bottom:5px;}
+    .comment small { color:#666;}
+    .reply-btn,.helpful-btn { font-size:12px; margin-left:5px; cursor:pointer;}
+    .comment-input { width:100%; padding:8px; margin-top:8px; border-radius:5px; border:1px solid #ccc;}
+    .toast { position:fixed; bottom:20px; right:20px; background:#4caf50; color:#fff; padding:10px 15px; border-radius:5px; opacity:0; transition:opacity 0.5s ease;}
+    .toast.show { opacity:1; }
+  </style>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <h2>Posts Feed</h2>
+  <div id="feed"></div>
+
+  <!-- Toast -->
+  <div class="toast" id="toast">Success!</div>
+
+  <!-- Firebase -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-app.js";
+    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-auth.js";
+    import { getFirestore, doc, getDoc, setDoc, updateDoc, increment, deleteDoc } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-firestore.js";
+    import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-storage.js";
+    
+    const firebaseConfig = {
+      apiKey: "AIzaSyAJUpbCOWRl_YU14eAjARPacD9CuiBSPfg",
+      authDomain: "probso.firebaseapp.com",
+      projectId: "probso",
+      storageBucket: "probso.firebasestorage.app",
+      messagingSenderId: "892196080965",
+      appId: "1:892196080965:web:9459195d61c71ed22a022c"
+    };
+    
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+    const storage = getStorage(app);
+    
+    const feed = document.getElementById("feed");
+
+    // Toast function
+    function showToast(msg){
+      let toast = document.getElementById("toast");
+      toast.innerText = msg;
+      toast.classList.add("show");
+      setTimeout(()=>{ toast.classList.remove("show"); },2000);
+    }
+
+    // Load Posts realtime
+    const postsRef = collection(db, "posts");
+    onSnapshot(postsRef, (snapshot)=>{
+      feed.innerHTML = "";
+      snapshot.forEach(docSnap=>{
+        let post = docSnap.data();
+        renderPost(docSnap.id, post);
+      });
+    });
+
+    // Render Post
+    function renderPost(id, post){
+      let div = document.createElement("div");
+      div.classList.add("post");
+      div.innerHTML = `
+        <div class="post-header">
+          <div class="user-info" onclick="openProfile('${post.uid}')">
+            <img src="${post.userPhoto || 'https://via.placeholder.com/40'}">
+            <span class="username">${post.username}</span>
+          </div>
+          <div class="menu" onclick="showMenu('${id}','${post.uid}')">⋮</div>
+        </div>
+        <div class="post-content">${post.content}</div>
+        <textarea class="comment-input" placeholder="Write a comment..."></textarea>
+        <div class="post-footer">
+          <button onclick="addComment('${id}', this)">💬 Comment</button>
+          <button onclick="toggleComments(this)">📖 See Comments</button>
+          <button onclick="markHelpful('${id}')">👍 Helpful (${post.helpful || 0})</button>
+          <button onclick="sharePost('${id}')">🔗 Share</button>
+        </div>
+        <div class="comment-section" id="comments-${id}"></div>
+      `;
+      feed.appendChild(div);
+      loadComments(id);
+    }
+
+    // Load comments
+    async function loadComments(postId){
+      const postRef = doc(db,"posts",postId);
+      onSnapshot(postRef,(docSnap)=>{
+        const post = docSnap.data();
+        const commentsBox = document.getElementById("comments-"+postId);
+        if(commentsBox){
+          commentsBox.innerHTML="";
+          if(post.comments){
+            post.comments.forEach(c=>{
+              let cDiv=document.createElement("div");
+              cDiv.classList.add("comment");
+              cDiv.innerHTML = `<strong>${c.user}</strong> ${c.text} <br><small>${c.time}</small>`;
+              commentsBox.appendChild(cDiv);
+            });
+          }
+        }
+      });
+    }
+
+    // Add Comment
+    window.addComment = async function(postId, btn){
+      let post = btn.closest(".post");
+      let input = post.querySelector(".comment-input");
+      if(input.value.trim() !== ""){
+        const postRef = doc(db,"posts",postId);
+        await updateDoc(postRef,{
+          comments: arrayUnion({
+            user: auth.currentUser.displayName || "User",
+            text: input.value,
+            time: new Date().toLocaleString()
+          })
+        });
+        input.value="";
+        showToast("Comment added!");
+      }
+    }
+
+    // Toggle Comments
+    window.toggleComments = function(btn){
+      let post = btn.closest(".post");
+      let comments = post.querySelector(".comment-section");
+      comments.style.display = comments.style.display==="block"?"none":"block";
+    }
+
+    // Helpful
+    window.markHelpful = async function(postId){
+      const postRef = doc(db,"posts",postId);
+      await updateDoc(postRef,{ helpful: increment(1) });
+      showToast("Marked as Helpful!");
+    }
+
+    // Share
+    window.sharePost = function(postId){
+      navigator.clipboard.writeText(window.location.href+"?post="+postId);
+      showToast("Post link copied!");
+    }
+
+    // Profile
+    window.openProfile = function(uid){
+      loadPage("profile.html?uid="+uid);
+    }
+
+    // Menu
+    window.showMenu = function(postId, ownerId){
+      if(auth.currentUser && auth.currentUser.uid === ownerId){
+        alert("Options: Edit | Delete");
+      } else {
+        alert("Options: Report");
+      }
+    }
+
+  </script>
+ <script type="module" src ="app.js"></script>
+</body>
+</html>

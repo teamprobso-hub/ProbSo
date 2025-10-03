@@ -1,6 +1,6 @@
-import { initializeApp } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-app.js";
-import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, GoogleAuthProvider, signInWithPopup, signOut } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-auth.js";
-import { getFirestore, collection, addDoc, doc, setDoc, getDoc, query, orderBy, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.3.0/firebase-firestore.js";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-app.js";
+import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, GoogleAuthProvider, signInWithPopup, signOut } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-auth.js";
+import { getFirestore, collection, addDoc, doc, setDoc, getDoc, query, orderBy, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-firestore.js";
 
 // Firebase config
 const firebaseConfig = {
@@ -14,6 +14,8 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
+
+export {app,auth, db};
 
 // UI Elements
 const loginModal = document.getElementById('loginModal');
@@ -84,6 +86,18 @@ onAuthStateChanged(auth,async (user)=>{
     feedList.innerHTML='<div class="small-text muted">Login to see interactive features.</div>';
   }
 });
+
+// Credits Add karne ka function
+async function addCredits(userId, credits) {
+  const userRef = doc(db, "users", userId);
+  await updateDoc(userRef, {
+    credits: increment(credits)
+  });
+  console.log("Credits added:", credits);
+}
+
+// Ye function message.html se call hoga
+window.addCredits = addCredits;
 
 
 // Toggle panel open/close
@@ -163,6 +177,41 @@ document.addEventListener("click", (e) => {
     }
   }
 });
+
+// Assuming Firebase is already initialized
+document.addEventListener('DOMContentLoaded', () => {
+    const messagesBtn = document.querySelectorAll('.messagesBtn');
+
+    messagesBtn.forEach(btn => {
+        btn.addEventListener('click', () => {
+            const user = firebase.auth().currentUser;
+            if(user){
+                window.location.href = 'message.html';
+            } else {
+                alert('Login required!');
+                openLoginModal();
+            }
+        });
+    });
+});
+
+firebase.auth().onAuthStateChanged((user) => {
+    if(user){
+        db.collection('messages')
+          .where('receiverId', '==', user.uid)
+          .get()
+          .then(snapshot => {
+              snapshot.forEach(doc => {
+                  console.log(doc.data()); // Display message
+              });
+          });
+    }
+});
+// Example function to open login modal
+function openLoginModal() {
+    const modal = document.getElementById('loginModal');
+    if(modal) modal.style.display = 'block';
+}
 
 // Post submission
 postBtn.addEventListener('click', async ()=>{

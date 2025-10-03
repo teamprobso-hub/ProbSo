@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Chat</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin:0; padding:0; }
+    header { display:flex; align-items:center; justify-content:space-between; padding:10px; background:#0b5ed7; color:#fff; }
+    .chat-box { height: 70vh; overflow-y:auto; padding:10px; background:#f5f5f5; }
+    .msg { margin:5px 0; padding:8px 12px; border-radius:12px; max-width:60%; }
+    .me { background:#6200ea; color:white; margin-left:auto; }
+    .them { background:white; color:black; }
+    .input-area { display:flex; padding:10px; border-top:1px solid #ccc; }
+    .input-area input { flex:1; padding:10px; }
+    .input-area button { padding:10px; }
+    .credits { background:#fff; border:1px solid #ccc; padding:5px 10px; border-radius:6px; margin-left:10px; cursor:pointer; }
+    .popup { position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); background:white; border:1px solid #ccc; padding:20px; display:none; z-index:1000; }
+    .popup.active { display:block; }
+  </style>
+</head>
+<body>
+  <header>
+    <div id="chatUser">User</div>
+    <div class="credits" id="creditBox">Credits: <span id="creditVal">100</span></div>
+    <div><button id="optionsBtn">⋮</button></div>
+  </header>
+
+  <div class="chat-box" id="chatBox"></div>
+
+  <div class="input-area">
+    <input type="text" id="msgInput" placeholder="Type a message..." />
+    <button id="sendBtn">Send</button>
+  </div>
+
+  <!-- Credits Popup -->
+  <div id="creditsPopup" class="popup">
+    <h3>Your Credits</h3>
+    <p>Rules: Sending message = -1 credit, Sending image = -5 credits</p>
+    <button id="buyCreditsBtn">Buy Credits</button>
+    <button onclick="document.getElementById('creditsPopup').classList.remove('active')">×</button>
+  </div>
+
+  <script type="module">
+    import { auth, db } from './app.js';
+    import { collection, addDoc, query, orderBy, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-firestore.js";
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const otherUid = urlParams.get("uid");
+
+    const chatBox = document.getElementById("chatBox");
+    const msgInput = document.getElementById("msgInput");
+    const sendBtn = document.getElementById("sendBtn");
+    const creditBox = document.getElementById("creditBox");
+    const creditVal = document.getElementById("creditVal");
+    const creditsPopup = document.getElementById("creditsPopup");
+
+    let credits = 100; // TODO: Load from Firestore user profile
+
+    // Open credits popup
+    creditBox.addEventListener("click", ()=> creditsPopup.classList.add("active"));
+
+    // Send message
+    sendBtn.addEventListener("click", async ()=>{
+      if (!msgInput.value.trim()) return;
+      if (credits <= 0) {
+        alert("No credits left. Please buy credits.");
+        return;
+      }
+      await addDoc(collection(db, "messages"), {
+        from: auth.currentUser.uid,
+        to: otherUid,
+        text: msgInput.value,
+        createdAt: new Date()
+      });
+      credits--; 
+      creditVal.textContent = credits;
+      msgInput.value = "";
+    });
+
+    // Realtime listener
+    const q = query(collection(db, "messages"), orderBy("createdAt"));
+    onSnapshot(q, (snapshot) => {
+      chatBox.innerHTML = "";
+      snapshot.forEach(doc => {
+        const data = doc.data();
+        if ((data.from === auth.currentUser.uid && data.to === otherUid) ||
+            (data.from === otherUid && data.to === auth.currentUser.uid)) {
+          const div = document.createElement("div");
+          div.className = "msg " + (data.from === auth.currentUser.uid ? "me" : "them");
+          div.textContent = data.text;
+          chatBox.appendChild(div);
+        }
+      });
+      chatBox.scrollTop = chatBox.scrollHeight;
+    });
+  </script>
+<script type="module" src="app.js"></script>
+</body>
+</html>
