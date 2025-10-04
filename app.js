@@ -1,6 +1,6 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-app.js";
 import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, GoogleAuthProvider, signInWithPopup, signOut } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-auth.js";
-import { getFirestore, collection, addDoc, doc, setDoc, getDoc, query, orderBy, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-firestore.js";
+import { getFirestore, collection, addDoc, doc, setDoc, getDoc, updateDoc, query, orderBy, onSnapshot, serverTimestamp, increment } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-firestore.js";
 
 // Firebase config
 const firebaseConfig = {
@@ -15,7 +15,12 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 
-export {app,auth, db};
+// ✅ Export helpers
+export { auth, db, 
+  collection, addDoc, doc, setDoc, getDoc, updateDoc,
+  query, orderBy, onSnapshot, serverTimestamp, increment
+};
+
 
 // UI Elements
 const loginModal = document.getElementById('loginModal');
@@ -179,64 +184,96 @@ document.addEventListener("click", (e) => {
 });
 
 // Assuming Firebase is already initialized
+
 document.addEventListener('DOMContentLoaded', () => {
     const messagesBtn = document.querySelectorAll('.messagesBtn');
 
     messagesBtn.forEach(btn => {
         btn.addEventListener('click', () => {
-            const user = firebase.auth().currentUser;
+            const user = auth.currentUser;
             if(user){
                 window.location.href = 'message.html';
             } else {
-                alert('Login required!');
+                alert('Please Login First!');
                 openLoginModal();
             }
         });
     });
 });
 
-firebase.auth().onAuthStateChanged((user) => {
+onAuthStateChanged(auth, async (user) => {
     if(user){
-        db.collection('messages')
-          .where('receiverId', '==', user.uid)
-          .get()
-          .then(snapshot => {
-              snapshot.forEach(doc => {
-                  console.log(doc.data()); // Display message
-              });
-          });
+        const q = query(
+            collection(db, 'messages'),
+            where('receiverId', '==', user.uid)
+        );
+
+        const snapshot = await getDocs(q);
+        snapshot.forEach(doc => {
+            console.log(doc.data()); // Display message
+        });
     }
 });
+
 // Example function to open login modal
 function openLoginModal() {
     const modal = document.getElementById('loginModal');
     if(modal) modal.style.display = 'block';
 }
+// 🔹 Post Create
+document.getElementById("postBtn").addEventListener("click", async () => {
+  const user = auth.currentUser;
+  if (!user) { alert("Please login first!"); return; }
 
-// Post submission
-postBtn.addEventListener('click', async ()=>{
-  if(!auth.currentUser){ openLogin(); return showToast('Login required'); }
-  const text = postText.value.trim();
-  const category = document.getElementById('categorySelect').value||'';
-  if(!text) return showToast('Post likho pehle');
-  try{
-    await addDoc(collection(db,'posts'),{authorUid:auth.currentUser.uid,authorName:profileNameEl.innerText,text,category,createdAt:serverTimestamp()});
-    postText.value='';
-    showToast('Post submitted');
-  }catch(err){alert(err.message);}
+  const text = document.getElementById("postText").value.trim();
+  if (!text) { alert("Please Write Something!"); return; }
+
+  await addDoc(collection(db, "posts"), {
+    userId: user.uid,
+    username: user.displayName || user.email,
+    profilePic: user.photoURL || "default.jpg",
+    text: text,
+    category: document.getElementById("categorySelect").value,
+    createdAt: serverTimestamp(),
+    helpful: 0
+  });
+
+  document.getElementById("postText").value = "";
+  alert("✅ Post added successfully!");
 });
 
-// Feed
-function loadFeedRealtime(){
-  const q = query(collection(db,'posts'),orderBy('createdAt','desc'));
-  onSnapshot(q,(snap)=>{
-    feedList.innerHTML='';
-    snap.forEach(doc=>{
-      const data = doc.data();
-      const div = document.createElement('div');
-      div.className='post';
-      div.innerHTML=`<div><b>${data.authorName}</b> <span class="small-text">${data.category||''}</span></div><div>${data.text}</div>`;
-      feedList.appendChild(div);
-    });
+// 🔹 Realtime Feed
+const feed = document.getElementById("feedList");
+const q = query(collection(db, "posts"), orderBy("createdAt", "desc"));
+
+onSnapshot(q, (snapshot) => {
+  feed.innerHTML = "";
+  snapshot.forEach((docSnap) => {
+    const post = docSnap.data();
+    const postId = docSnap.id;
+    feed.innerHTML += `
+      <div class="post-card">
+        <div class="post-header">
+          <span class="username">${post.username}</span>
+        </div>
+        <div class="post-content">${post.text}</div>
+        <div class="post-actions">
+          <button onclick="markHelpful('${postId}')">👍 Helpful (${post.helpful || 0})</button>
+          <button onclick="sharePost('${postId}')">🔗 Share</button>
+        </div>
+      </div>
+    `;
   });
-}
+});
+
+// 🔹 Helpful
+window.markHelpful = async (postId) => {
+  const ref = doc(db, "posts", postId);
+  await updateDoc(ref, { helpful: increment(1) });
+};
+
+// 🔹 Share
+window.sharePost = (postId) => {
+  navigator.clipboard.writeText(window.location.href + "?post=" + postId);
+  alert("🔗 Post link copied!");
+};

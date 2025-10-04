@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>ProbSo - Single Page</title>
+<title>ProbSo - A Problem Solving App</title>
 <link rel="stylesheet" href="style.css">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 </head>
@@ -27,7 +27,14 @@
 <main id="mainContent">
   <!-- Dynamic content (like profile.html) yahan load hoga -->
 </main>
-<script type="module">
+  <!-- Firebase -->
+  <script type="module" src="app.js"></script>
+  <script type ="module">
+    import { auth, db, collection, addDoc, onSnapshot } from "./app.js"
+  </script>
+    
+
+<script type ="Module">
 function loadPage(page){
   fetch(page)
     .then(res=>res.text())
@@ -129,6 +136,5 @@ document.getElementById('openProfileBtn').addEventListener('click', ()=>{
 <div id="toast" class="toast hidden"></div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<script type="module" src="app.js"></script>
 </body>
 </html>
