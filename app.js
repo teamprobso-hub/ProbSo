@@ -220,6 +220,7 @@ function openLoginModal() {
     const modal = document.getElementById('loginModal');
     if(modal) modal.style.display = 'block';
 }
+
 // 🔹 Post Create
 document.getElementById("postBtn").addEventListener("click", async () => {
   const user = auth.currentUser;
