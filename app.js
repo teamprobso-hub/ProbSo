@@ -253,12 +253,22 @@ onSnapshot(q, (snapshot) => {
     const post = docSnap.data();
     const postId = docSnap.id;
     feed.innerHTML += `
-      <div class="post-card">
-        <div class="post-header">
-          <span class="username">${post.username}</span>
-        </div>
+      <div class="post-card"><div class="post-header">
+            <img src="${post.profilePic || 'https://via.placeholder.com/25'}" class="profile-pic" alt="Profile">
+            <strong><span class="username">${post.username || "Anonymous"}</span></strong>
+          </div>
+      
         <div class="post-content">${post.text}</div>
-        <div class="post-actions">
+        
+        <div class="comment-section">
+            <textarea id="commentInput-${postId}" placeholder="Write a comment..."></textarea>
+            <div class="comment-actions">
+              <button onclick="postComment('${postId}')">💬 Comment</button>
+              <button onclick="seeComments('${postId}')">📖 See Comments</button>
+            </div>
+            <div id="comments-${postId}" class="comments hidden"></div>
+            
+         <div class="post-actions">
           <button onclick="markHelpful('${postId}')">👍 Helpful (${post.helpful || 0})</button>
           <button onclick="sharePost('${postId}')">🔗 Share</button>
         </div>
@@ -266,6 +276,55 @@ onSnapshot(q, (snapshot) => {
     `;
   });
 });
+
+ // 🔹 Post Comment
+  window.postComment = async (postId) => {
+    const user = auth.currentUser;
+    if (!user) {
+      alert("Please login first to comment.");
+      return;
+    }
+
+    const input = document.getElementById(`commentInput-${postId}`);
+    const text = input.value.trim();
+    if (!text) return alert("Comment cannot be empty.");
+
+    const commentsRef = collection(db, "posts", postId, "comments");
+    await addDoc(commentsRef, {
+      userId: user.uid,
+      username: user.displayName || "Anonymous",
+      profilePic: user.photoURL || "",
+      text,
+      createdAt: serverTimestamp(),
+    });
+
+    input.value = "";
+    alert("✅ Comment posted!");
+  };
+
+  // 🔹 See Comments
+  window.seeComments = async (postId) => {
+    const commentsDiv = document.getElementById(`comments-${postId}`);
+    commentsDiv.classList.toggle("hidden");
+
+    if (!commentsDiv.classList.contains("hidden")) {
+      const commentsRef = collection(db, "posts", postId, "comments");
+      const q = query(commentsRef, orderBy("createdAt", "desc"));
+
+      onSnapshot(q, (snapshot) => {
+        commentsDiv.innerHTML = "";
+        snapshot.forEach((docSnap) => {
+          const c = docSnap.data();
+          commentsDiv.innerHTML += `
+            <div class="comment">
+              <img src="${c.profilePic || 'https://via.placeholder.com/25'}" class="comment-pic">
+              <b>${c.username}</b>: ${c.text}
+            </div>
+          `;
+        });
+      });
+    }
+  };
 
 // 🔹 Helpful
 window.markHelpful = async (postId) => {
