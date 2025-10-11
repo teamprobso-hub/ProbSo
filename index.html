@@ -3,9 +3,11 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>ProbSo - A Problem Solving App</title>
+<title>ProbSo - A Problem Solving Social App</title>
 <link rel="stylesheet" href="style.css">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#1976d2">
 </head>
 <body>
 
@@ -133,6 +135,14 @@ document.getElementById('openProfileBtn').addEventListener('click', ()=>{
 </div>
 
 <div id="toast" class="toast hidden"></div>
+
+<script>
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('/sw.js')
+      .then(() => console.log('Service Worker registered'))
+      .catch((err) => console.error('SW registration failed:', err));
+  }
+</script>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 </body>

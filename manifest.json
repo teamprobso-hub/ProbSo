@@ -1,0 +1,22 @@
+{
+  "name": "Probso — A Problem Solving Social App",
+  "short_name": "ProbSo",
+  "description": "A community help app where people solve each other's real-life problems locally.",
+  "start_url": "/index.html",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#1976d2",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/logo-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/Logo-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
