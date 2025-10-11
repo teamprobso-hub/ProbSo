@@ -328,9 +328,61 @@ onSnapshot(q, (snapshot) => {
 
 // 🔹 Helpful
 window.markHelpful = async (postId) => {
+  window.markHelpful = async (postId) => {
+  const user = auth.currentUser;
+  if (!user) {
+    alert("Please login to react!");
+    return;
+  }
+
   const ref = doc(db, "posts", postId);
+  const postSnap = await getDoc(ref);
+  const post = postSnap.data();
+
+  // 🔹 1. Apne post par like nahi kar sakte
+  if (post.userId === user.uid) {
+    alert("You can’t mark your own post as helpful.");
+    return;
+  }
+
+  // 🔹 2. Check karo user pehle se helpful kar chuka hai ya nahi
+  const userHelpfulRef = doc(db, "posts", postId, "helpfulBy", user.uid);
+  const alreadyHelpful = await getDoc(userHelpfulRef);
+
+  if (alreadyHelpful.exists()) {
+    alert("You already marked this post as helpful!");
+    return;
+  }
+
+  // 🔹 3. Helpful count +1 karo aur user ka record save karo
   await updateDoc(ref, { helpful: increment(1) });
+  await setDoc(userHelpfulRef, { marked: true, time: serverTimestamp() });
 };
+
+  const ref = doc(db, "posts", postId);
+  const postSnap = await getDoc(ref);
+  const post = postSnap.data();
+
+  // 🔹 1. Apne post par like nahi kar sakte
+  if (post.userId === user.uid) {
+    alert("You can’t mark your own post as helpful.");
+    return;
+  }
+
+  // 🔹 2. Check karo user pehle se helpful kar chuka hai ya nahi
+  const userHelpfulRef = doc(db, "posts", postId, "helpfulBy", user.uid);
+  const alreadyHelpful = await getDoc(userHelpfulRef);
+
+  if (alreadyHelpful.exists()) {
+    alert("You already marked this post as helpful!");
+    return;
+  }
+
+  // 🔹 3. Helpful count +1 karo aur user ka record save karo
+  await updateDoc(ref, { helpful: increment(1) });
+  await setDoc(userHelpfulRef, { marked: true, time: serverTimestamp() });
+};
+
 
 // 🔹 Share
 window.sharePost = (postId) => {
