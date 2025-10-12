@@ -498,7 +498,7 @@ window.sharePost = (postId) => {
 
 
 // call this when you render feed (after posts inserted in DOM)
-function insertTestAdsEveryN(containerSelector, every = 6) {
+function insertTestAdsEveryN(containerSelector, every = 5) {
   const container = document.querySelector(containerSelector);
   if (!container) return;
   const posts = container.querySelectorAll('.post-card'); // your post selector
