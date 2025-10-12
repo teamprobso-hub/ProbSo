@@ -65,7 +65,7 @@ emailLoginBtn.addEventListener('click', async ()=>{
 emailSignupBtn.addEventListener('click', async ()=>{
   const email = document.getElementById('emailInput').value.trim();
   const pwd = document.getElementById('pwdInput').value.trim();
-  if(!email||!pwd) return showToast('Email & Password chahiye');
+  if(!email||!pwd) return showToast('Email & Password required!');
   try{ const cred = await createUserWithEmailAndPassword(auth,email,pwd); await ensureUserDoc(cred.user); closeLoginModal(); showToast('Signup successful'); }catch(err){alert(err.message);}
 });
 
@@ -277,54 +277,160 @@ onSnapshot(q, (snapshot) => {
   });
 });
 
- // 🔹 Post Comment
-  window.postComment = async (postId) => {
-    const user = auth.currentUser;
-    if (!user) {
-      alert("Please login first to comment.");
-      return;
-    }
+// ==================== COMMENT SYSTEM ====================
 
-    const input = document.getElementById(`commentInput-${postId}`);
-    const text = input.value.trim();
-    if (!text) return alert("Comment cannot be empty.");
+// 🔹 Add Comment
+window.postComment = async (postId) => {
+  const user = auth.currentUser;
+  if (!user) return alert("Please login first.");
 
+  const input = document.getElementById(`commentInput-${postId}`);
+  const text = input.value.trim();
+  if (!text) return alert("Comment cannot be empty.");
+
+  const ref = collection(db, "posts", postId, "comments");
+  await addDoc(ref, {
+    userId: user.uid,
+    username: user.displayName || "Anonymous",
+    profilePic: user.photoURL || "default.jpg",
+    text,
+    helpful: 0,
+    createdAt: serverTimestamp(),
+  });
+
+  input.value = "";
+};
+
+// 🔹 Load Comments + Count + Reply Support
+window.seeComments = async (postId) => {
+  const div = document.getElementById(`comments-${postId}`);
+  const btn = document.getElementById(`seeComments-${postId}`);
+  div.classList.toggle("hidden");
+
+  if (!div.classList.contains("hidden")) {
     const commentsRef = collection(db, "posts", postId, "comments");
-    await addDoc(commentsRef, {
-      userId: user.uid,
-      username: user.displayName || "Anonymous",
-      profilePic: user.photoURL || "",
-      text,
-      createdAt: serverTimestamp(),
-    });
+    const q = query(commentsRef, orderBy("createdAt", "desc"));
 
-    input.value = "";
-    alert("✅ Comment posted!");
-  };
+    onSnapshot(q, async (snapshot) => {
+      div.innerHTML = "";
+      let totalCount = 0;
 
-  // 🔹 See Comments
-  window.seeComments = async (postId) => {
-    const commentsDiv = document.getElementById(`comments-${postId}`);
-    commentsDiv.classList.toggle("hidden");
+      for (const docSnap of snapshot.docs) {
+        const c = docSnap.data();
+        const cid = docSnap.id;
+        totalCount++;
 
-    if (!commentsDiv.classList.contains("hidden")) {
-      const commentsRef = collection(db, "posts", postId, "comments");
-      const q = query(commentsRef, orderBy("createdAt", "desc"));
+        // Replies
+        const repliesRef = collection(db, "posts", postId, "comments", cid, "replies");
+        const repliesSnap = await getDocs(repliesRef);
+        const replyCount = repliesSnap.size;
+        totalCount += replyCount;
 
-      onSnapshot(q, (snapshot) => {
-        commentsDiv.innerHTML = "";
-        snapshot.forEach((docSnap) => {
-          const c = docSnap.data();
-          commentsDiv.innerHTML += `
-            <div class="comment">
-              <img src="${c.profilePic || 'https://via.placeholder.com/25'}" class="comment-pic">
-              <b>${c.username}</b>: ${c.text}
+        div.innerHTML += `
+          <div class="comment">
+            <img src="${c.profilePic}" class="comment-pic">
+            <b>${c.username}</b>: ${c.text}
+            <div class="comment-actions">
+              <button onclick="replyBox('${postId}','${cid}')">↩️ Reply</button>
+              <button onclick="markCommentHelpful('${postId}','${cid}')">👍 Helpful (${c.helpful || 0})</button>
             </div>
-          `;
+            <div id="replyBox-${cid}" class="reply-box hidden"></div>
+            <div id="replies-${cid}" class="replies"></div>
+          </div>
+        `;
+
+        // Load replies
+        onSnapshot(repliesRef, (rSnap) => {
+          const rDiv = document.getElementById(`replies-${cid}`);
+          rDiv.innerHTML = "";
+          rSnap.forEach((r) => {
+            const rp = r.data();
+            rDiv.innerHTML += `
+              <div class="reply">
+                <img src="${rp.profilePic}" class="reply-pic">
+                <b>${rp.username}</b>: ${rp.text}
+                <div class="reply-actions">
+                  <button onclick="replyBox('${postId}','${cid}','${r.id}')">↩️ Reply</button>
+                  <button onclick="markReplyHelpful('${postId}','${cid}','${r.id}')">👍 Helpful (${rp.helpful || 0})</button>
+                </div>
+              </div>
+            `;
+          });
         });
-      });
-    }
-  };
+      }
+
+      // Update count on See Comments button
+      btn.innerText = `📖 See Comments (${totalCount})`;
+    });
+  }
+};
+
+// 🔹 Reply Box
+window.replyBox = (postId, commentId, replyToId = null) => {
+  const box = document.getElementById(`replyBox-${commentId}`);
+  box.classList.toggle("hidden");
+  if (!box.classList.contains("hidden")) {
+    box.innerHTML = `
+      <textarea id="replyInput-${commentId}" placeholder="Write reply..."></textarea>
+      <button onclick="postReply('${postId}','${commentId}','${replyToId || ""}')">Reply</button>
+    `;
+  } else {
+    box.innerHTML = "";
+  }
+};
+
+// 🔹 Post Reply
+window.postReply = async (postId, commentId, replyToId = "") => {
+  const user = auth.currentUser;
+  if (!user) return alert("Please login first.");
+
+  const input = document.getElementById(`replyInput-${commentId}`);
+  const text = input.value.trim();
+  if (!text) return alert("Reply cannot be empty.");
+
+  const repliesRef = collection(db, "posts", postId, "comments", commentId, "replies");
+  await addDoc(repliesRef, {
+    userId: user.uid,
+    username: user.displayName || "Anonymous",
+    profilePic: user.photoURL || "default.jpg",
+    text,
+    helpful: 0,
+    createdAt: serverTimestamp(),
+  });
+
+  input.value = "";
+  alert("✅ Reply posted!");
+};
+
+// 🔹 Helpful (Comment)
+window.markCommentHelpful = async (postId, commentId) => {
+  const user = auth.currentUser;
+  if (!user) return alert("Please login first.");
+
+  const ref = doc(db, "posts", postId, "comments", commentId);
+  await updateDoc(ref, { helpful: increment(1) });
+
+  // Increase points for the comment owner
+  const snap = await getDoc(ref);
+  const ownerId = snap.data().userId;
+  const userRef = doc(db, "users", ownerId);
+  await updateDoc(userRef, { points: increment(1) });
+};
+
+// 🔹 Helpful (Reply)
+window.markReplyHelpful = async (postId, commentId, replyId) => {
+  const user = auth.currentUser;
+  if (!user) return alert("Please login first.");
+
+  const ref = doc(db, "posts", postId, "comments", commentId, "replies", replyId);
+  await updateDoc(ref, { helpful: increment(1) });
+
+  // Increase points for the reply owner
+  const snap = await getDoc(ref);
+  const ownerId = snap.data().userId;
+  const userRef = doc(db, "users", ownerId);
+  await updateDoc(userRef, { points: increment(1) });
+};
 
 // 🔹 Helpful
 window.markHelpful = async (postId) => {
@@ -389,3 +495,30 @@ window.sharePost = (postId) => {
   navigator.clipboard.writeText(window.location.href + "?post=" + postId);
   alert("🔗 Post link copied!");
 };
+
+
+// call this when you render feed (after posts inserted in DOM)
+function insertTestAdsEveryN(containerSelector, every = 5) {
+  const container = document.querySelector(containerSelector);
+  if (!container) return;
+  const posts = container.querySelectorAll('.post-card'); // your post selector
+  posts.forEach((p, idx) => {
+    const pos = idx + 1;
+    if (pos % every === 0) {
+      const adWrap = document.createElement('div');
+      adWrap.className = 'ad-container';
+      adWrap.innerHTML = `
+        <ins class="adsbygoogle"
+             style="display:block"
+             data-ad-client="ca-pub-0000000000000000"
+             data-ad-slot="1234567890"
+             data-ad-format="auto"
+             data-full-width-responsive="true"></ins>`;
+      p.after(adWrap);
+      try { (adsbygoogle = window.adsbygoogle || []).push({}); } catch(e){ console.warn(e) }
+    }
+  });
+}
+
+// Example usage (after feed rendered)
+insertTestAdsEveryN('#feedList', 6);

@@ -141,3 +141,8 @@ body{margin:0;font-family:Inter,system-ui,Arial,sans-serif;background:var(--bg);
 .hidden {
   display: none;
 }
+
+
+
+.ad-container { margin: 12px 0; max-width: 100%; text-align:center; }
+.ad-container ins.adsbygoogle { display:block; margin: 0 auto; }
