@@ -498,7 +498,7 @@ window.sharePost = (postId) => {
 
 
 // call this when you render feed (after posts inserted in DOM)
-function insertTestAdsEveryN(containerSelector, every = 5) {
+function insertTestAdsEveryN(containerSelector, every = 6) {
   const container = document.querySelector(containerSelector);
   if (!container) return;
   const posts = container.querySelectorAll('.post-card'); // your post selector
@@ -510,7 +510,7 @@ function insertTestAdsEveryN(containerSelector, every = 5) {
       adWrap.innerHTML = `
         <ins class="adsbygoogle"
              style="display:block"
-             data-ad-client="ca-pub-0000000000000000"
+             data-ad-client="ca-pub-3940256099942544"
              data-ad-slot="1234567890"
              data-ad-format="auto"
              data-full-width-responsive="true"></ins>`;
