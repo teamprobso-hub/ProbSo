@@ -327,6 +327,7 @@ onSnapshot(q, (snapshot) => {
   };
 
 // 🔹 Helpful
+window.markHelpful = async (postId) => {
   window.markHelpful = async (postId) => {
   const user = auth.currentUser;
   if (!user) {
