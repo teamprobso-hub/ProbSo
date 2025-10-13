@@ -1,10 +1,10 @@
 const CACHE_NAME = 'probso-cache-v1';
 const urlsToCache = [
   '/',
-  './index.html',
-  './manifest.json',
-  './logo-192.png',
-  './Logo-512.png'
+  '/index.html',
+  '/manifest.json',
+  '/logo-192.png',
+  '/Logo-512.png'
 ];
 
 // Install event
