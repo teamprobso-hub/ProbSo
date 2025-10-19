@@ -1,10 +1,10 @@
 const CACHE_NAME = 'probso-cache-v1';
 const urlsToCache = [
   '/',
-  '/index.html',
-  '/manifest.json',
-  '/logo-192.png',
-  '/Logo-512.png'
+  '/ProbSo/index.html',
+  '/ProbSo/manifest.json',
+  '/ProbSo/logo-192.png',
+  '/ProbSo/Logo-512.png'
 ];
 
 // Install event
@@ -36,7 +36,7 @@ self.addEventListener('fetch', (event) => {
       return (
         response ||
         fetch(event.request).catch(() =>
-          caches.match('/index.html')
+          caches.match('/ProbSo/index.html')
         )
       );
     })
